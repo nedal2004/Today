@@ -2,10 +2,16 @@ package com.n.alian.today.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// ── Light palette ──
+val PrimaryLight = Color(0xFF1B6B4F)      // أخضر هادئ — هوية "إنجاز"
+val OnPrimaryLight = Color(0xFFFFFFFF)
+val BackgroundLight = Color(0xFFFAFAF7)   // أبيض دافئ، مش أبيض صارخ
+val SurfaceLight = Color(0xFFFFFFFF)
+val OnSurfaceLight = Color(0xFF1C1C1A)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// ── Dark palette ──
+val PrimaryDark = Color(0xFF7FD6B3)
+val OnPrimaryDark = Color(0xFF00382A)
+val BackgroundDark = Color(0xFF121412)
+val SurfaceDark = Color(0xFF1C1E1C)
+val OnSurfaceDark = Color(0xFFE4E4E0)

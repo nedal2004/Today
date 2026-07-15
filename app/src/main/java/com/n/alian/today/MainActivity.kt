@@ -15,8 +15,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.n.alian.today.ui.theme.TodayTheme
 import android.util.Log
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.n.alian.today.data.local.Bucket
 import com.n.alian.today.data.local.Task
+import com.n.alian.today.ui.tasklist.TaskListViewModel
+import com.n.alian.today.ui.tasklist.TaskListViewModelFactory
+import com.n.alian.today.ui.tasklist.TaskListScreen
+import com.n.alian.today.data.local.AppDatabase
+import com.n.alian.today.data.repository.TaskRepository
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -25,7 +31,7 @@ class MainActivity : ComponentActivity() {
         // اختبار مؤقت لأسبوع ١ — بنحذفه بأسبوع ٢
         val repo = (application as TodayApp).repository
 
-        lifecycleScope.launch{
+        lifecycleScope.launch {
             repo.add(Task(title = "أول مهمة بالتطبيق 🎉", bucket = Bucket.TODAY))
             repo.add(Task(title = "مهمة بكرة", bucket = Bucket.TOMORROW))
 
@@ -37,7 +43,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TodayTheme {
-
+                val repository = TaskRepository(
+                    AppDatabase.get(applicationContext).taskDao()
+                )
+                val viewModel: TaskListViewModel = viewModel(
+                    factory = TaskListViewModelFactory(repository)
+                )
+                TaskListScreen(viewModel)
             }
         }
     }
