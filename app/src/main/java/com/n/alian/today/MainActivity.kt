@@ -30,26 +30,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // اختبار مؤقت لأسبوع ١ — بنحذفه بأسبوع ٢
         val repo = (application as TodayApp).repository
-
-        lifecycleScope.launch {
-            repo.add(Task(title = "أول مهمة بالتطبيق 🎉", bucket = Bucket.TODAY))
-            repo.add(Task(title = "مهمة بكرة", bucket = Bucket.TOMORROW))
-
-            repo.activeTasks(Bucket.TODAY).collect { tasks ->
-                Log.d("TODAY_TEST", "مهام اليوم: ${tasks.size}")
-                tasks.forEach { Log.d("TODAY_TEST", "→ ${it.id}: ${it.title}") }
-            }
-        }
         enableEdgeToEdge()
         setContent {
             TodayTheme {
-                val repository = TaskRepository(
-                    AppDatabase.get(applicationContext).taskDao()
-                )
+                val repository = (application as TodayApp).repository
                 val viewModel: TaskListViewModel = viewModel(
                     factory = TaskListViewModelFactory(repository)
                 )
-                TaskListScreen(viewModel)
+                TaskLisfix(main): remove leftover test inserts causing task duplicationtScreen(viewModel)
             }
         }
     }

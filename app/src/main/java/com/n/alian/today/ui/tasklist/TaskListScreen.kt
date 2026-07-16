@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -20,7 +21,7 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     // ── State محلي للشاشة ──
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<Task?>(null) }
 
     Scaffold(
