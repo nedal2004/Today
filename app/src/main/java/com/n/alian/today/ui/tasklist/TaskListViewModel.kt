@@ -15,9 +15,8 @@ class TaskListViewModel(
     private val repository: TaskRepository
 ) : ViewModel() {
 
-    // السلة المختارة — حالة داخلية بنتحكم فيها
     private val selectedBucket = MutableStateFlow(Bucket.TODAY)
-    // كل ما تتغير السلة، بنبدّل الاشتراك على تدفق المهام المناسب
+    
     val uiState: StateFlow<TaskListUiState> = selectedBucket
         .flatMapLatest { bucket ->
             repository.activeTasks(bucket).map { tasks ->
@@ -37,7 +36,7 @@ class TaskListViewModel(
             initialValue = TaskListUiState()
         )
 
-    // ── الأحداث (Events) — الشاشة بتنادي، النموذج بينفّذ ──
+    private var lastCompletedTask: Task? = null
 
     fun onBucketSelected(bucket: Bucket) {
         selectedBucket.value = bucket
@@ -56,6 +55,22 @@ class TaskListViewModel(
 
     fun onDeleteTask(task: Task) {
         viewModelScope.launch { repository.delete(task) }
+    }
+
+    fun onComplete(task: Task) {
+        lastCompletedTask = task
+        viewModelScope.launch {
+            repository.update(task.copy(isDone = true))
+        }
+    }
+
+    fun onUndo() {
+        lastCompletedTask?.let { task ->
+            viewModelScope.launch {
+                repository.update(task.copy(isDone = false))
+                lastCompletedTask = null
+            }
+        }
     }
 }
 

@@ -1,10 +1,12 @@
 package com.n.alian.today.ui.tasklist
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -14,17 +16,36 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.n.alian.today.data.local.Bucket
 import com.n.alian.today.data.local.Task
 import com.n.alian.today.ui.theme.Spacing
+import kotlinx.coroutines.launch
 
 @Composable
 fun TaskListScreen(viewModel: TaskListViewModel) {
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // ── State محلي للشاشة ──
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<Task?>(null) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    val onTaskCompleted: (Task) -> Unit = { task ->
+        viewModel.onComplete(task)
+
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = "تم إنجاز المهمة",
+                actionLabel = "تراجع",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.onUndo()
+            }
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "إضافة مهمة")
@@ -62,9 +83,11 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
                         verticalArrangement = Arrangement.spacedBy(Spacing.small)
                     ) {
                         items(uiState.tasks, key = { it.id }) { task ->
-                            TaskRow(
+                            SwipeableTaskRow(
                                 task = task,
-                                onClick = { editingTask = task }   // 🆕 ضغطة = فتح التعديل
+                                onClick = { editingTask = task },
+                                onCheckedChange = { onTaskCompleted(task) },
+                                onSwiped = { onTaskCompleted(task) }
                             )
                         }
                     }
@@ -73,7 +96,6 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
         }
     }
 
-    // ── Dialog الإضافة ──
     if (showAddDialog) {
         TaskDialog(
             dialogTitle = "مهمة جديدة",
@@ -86,7 +108,6 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
         )
     }
 
-    // ── 🆕 Dialog التعديل ──
     editingTask?.let { task ->
         TaskDialog(
             dialogTitle = "تعديل المهمة",
@@ -104,7 +125,6 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
     }
 }
 
-// ── 🆕 Dialog عام: بيخدم الإضافة والتعديل ──
 @Composable
 private fun TaskDialog(
     dialogTitle: String,
@@ -113,7 +133,6 @@ private fun TaskDialog(
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)? = null
 ) {
-    // remember بمفتاح: كل ما تتغير المهمة المفتوحة، الحقل بينجهز من جديد
     var title by remember(initialTask) {
         mutableStateOf(initialTask?.title ?: "")
     }
@@ -156,15 +175,76 @@ private fun TaskDialog(
 }
 
 @Composable
-private fun TaskRow(task: Task, onClick: () -> Unit) {
+private fun SwipeableTaskRow(
+    task: Task,
+    onClick: () -> Unit,
+    onCheckedChange: () -> Unit,
+    onSwiped: () -> Unit
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.StartToEnd) {
+                onSwiped()
+                true
+            } else {
+                false
+            }
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(horizontal = Spacing.medium),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Icon(
+                    Icons.Default.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        },
+        enableDismissFromEndToStart = false
+    ) {
+        TaskRow(
+            task = task,
+            onClick = onClick,
+            onCheckedChange = onCheckedChange
+        )
+    }
+}
+
+@Composable
+private fun TaskRow(
+    task: Task,
+    onClick: () -> Unit,
+    onCheckedChange: () -> Unit
+) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text(
-            text = task.title,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(Spacing.medium)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.medium),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = task.isDone,
+                onCheckedChange = { onCheckedChange() }
+            )
+            Spacer(modifier = Modifier.width(Spacing.small))
+            Text(
+                text = task.title,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f) // ضمان أن النص لا ينزل تحت التشك بوكس
+            )
+        }
     }
 }
