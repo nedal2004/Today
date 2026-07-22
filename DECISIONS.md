@@ -106,3 +106,43 @@ over-engineering لتطبيق "Focus" (التركيز على مهمة واحدة
 `TodayApp`, `AndroidManifest`) اقتصر على ما تطلبه دمج الميزات الجديدة
 (i18n، WorkManager، Glance، SavedStateHandle) وذُكر سببه في رسالة الـ commit
 الخاصة به.
+
+## 7. تحديث: استُلم ملف الـ Blueprint الحقيقي بعد إنجاز §0-6
+
+بعد إتمام العمل أعلاه، زوّدني المستخدم بنص الـ Blueprint الفعلي كاملاً. هذا
+يصحّح افتراضات §0 ويستبدلها حيث تعارضت. الفروقات وكيف عُولجت:
+
+- **تسمية الحزمة `com.n.alian.today` مقابل `applicationId`/`namespace`
+  `com.nedal.today`**: الـ Blueprint نفسه يوثّق هذا كتغيير مقصود عن الخطة
+  الأصلية ("الحزمة الحقيقية: com.n.alian.today ... applicationId بالـ Gradle
+  لسه com.nedal.today — بيشتغل عادي")، وليس عيباً كما ظننت في §0. لا حاجة لأي
+  تعديل — الاستيراد الصحيح لـ `R` من `com.nedal.today.R` (كما فعلت في §0)
+  يبقى صحيحاً وضرورياً بغض النظر عن كون الفرق مقصوداً أو لا.
+- **تسمية الودجت**: الـ Blueprint يحدد صراحة
+  `widget/TodayWidget.kt` + `TodayWidgetReceiver.kt` + `WidgetActions.kt`،
+  وليس "Focus Widget" كتسمية صنف (المفهوم/الهوية اسمها "Focus mode"، لكن
+  الصنف البرمجي `TodayWidget`). أُعيدت التسمية بالكامل (commit
+  `refactor(widget): rename to TodayWidget...`).
+- **تقسيم الأسبوعين ٦ و٧ يختلف عمّا افترضته في §0**:
+  - **الحقيقي أسبوع ٦** = تفاعل الودجت (`actionRunCallback` لإنجاز **و**إضافة
+    مهمة من الودجت) + مزامنة widget↔app + Material You. كنت قد نفّذت زر
+    "إنجاز" من الودجت ضمن ما سميته "أسبوع ٥" — بقي فقط زر "إضافة" من الودجت
+    (يفتح `MainActivity` مع `EXTRA_OPEN_ADD_DIALOG` ليُفتح حوار الإضافة
+    مباشرة) و توثيق أن `GlanceTheme.colors` (من `glance-material3`) توفّر
+    Material You تلقائياً بدون كود إضافي — كلاهما أُنجز الآن.
+  - **الحقيقي أسبوع ٧** = إصلاح أخطاء + مخططات UML (Mermaid) + README
+    احترافي فيه Product Brief + screenshots/GIF، **وليس** اختبارات أو
+    SavedStateHandle كما افترضت.
+- **الاختبارات (`TaskListViewModelTest`, `TaskDaoTest`) و`SavedStateHandle`
+  لثبات التبويب عبر process death**: هذه لم تكن جزءاً رسمياً من أي أسبوع
+  بالـ Blueprint الحقيقي، لكنها تبقى — عمل جودة إضافي (🟡 إضافة) ينسجم مع
+  معايير الجودة المطلوبة أصلاً في المهمة الأولى (عالج دوران الشاشة/process
+  death)، ولا تعارض أي قرار معماري ملزم. لم أتراجع عنها.
+- **بنية `domain/usecase/RolloverUseCase.kt`** المذكورة بقسم "بنية المشروع"
+  بالـ Blueprint: لم تُضَف. الكود الفعلي الذي يقدّمه الـ Blueprint نفسه بقسم
+  "طبقة البيانات الكاملة" (٧.٦) يضع `runDailyRollover` مباشرة داخل
+  `TaskRepository` بلا أي use-case منفصل — وهذا هو الموجود فعلاً بالمشروع
+  منذ أسبوع ١ (قبل هذه الجلسة). التناقض داخلي بالـ Blueprint نفسه (قسم البنية
+  التخطيطي أوسع من الكود الفعلي المُعطى)، والقرار الأبسط المطابق للكود
+  الموجود هو عدم إضافة طبقة `domain` غير مستخدَمة أصلاً — ينسجم مع "لا
+  over-engineering".

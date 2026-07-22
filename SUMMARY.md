@@ -4,15 +4,23 @@
 offline-first مع Focus Widget) من نهاية الأسبوع ٣ حتى نهاية الأسبوع ٧،
 والقرارات المتخذة، والمشاكل التي واجهتُها، وخطوات التحقق المطلوبة منك.
 
-## ⚠️ ملاحظة أولى مهمة: لا يوجد ملف Blueprint في المستودع
+## ⚠️ ملاحظة أولى مهمة: لا يوجد ملف Blueprint في المستودع (تم استلامه لاحقاً في المحادثة)
 
 قبل كتابة أي سطر، بحثتُ في كل الفروع (`Override` و
 `claude/today-project-completion-hczgga`) وكامل تاريخ الـ commits — **لا يوجد
 أي ملف Blueprint أو README أو خطة مكتوبة في هذا المستودع على الإطلاق**، فقط
-كود المشروع. التفاصيل الكاملة لكيفية إعادة بناء خطة الأسابيع ٤-٧ من أدلة
-موجودة فعلاً في الكود (تعليقات في `gradle/libs.versions.toml` تربط كل تقنية
-بأسبوع) موثقة في `DECISIONS.md`. لم أتوقف ولم أسألك، بل اتخذت القرار الأبسط
-المنسجم مع القيود المعمارية المذكورة في طلبك وسجّلته.
+كود المشروع. أعدت بناء خطة الأسابيع ٤-٧ من أدلة موجودة فعلاً في الكود
+(تعليقات بـ `gradle/libs.versions.toml`) ولم أتوقف ولم أسأل، حسب التوجيه.
+
+**بعد إنجاز كل ما هو موصوف أدناه، زوّدني المستخدم بنص الـ Blueprint الحقيقي
+كاملاً.** قارنته بما بنيته وصحّحت الفروقات (تفصيل كامل في `DECISIONS.md` §٧):
+أهمها إعادة تسمية `FocusWidget` → `TodayWidget`/`TodayWidgetReceiver`/
+`WidgetActions.kt` (كما يحدده الـ Blueprint حرفياً)، إضافة زر "إضافة مهمة" من
+الودجت (كان الجزء الناقص من تفاعل أسبوع ٦ الحقيقي)، وكتابة `README.md`
+احترافي فيه Product Brief ومخططات UML (هذا هو تسليم أسبوع ٧ الحقيقي — وليس
+الاختبارات/SavedStateHandle التي بنيتها كإضافة جودة قبل استلام الـ Blueprint).
+كل ما هو موصوف بالأقسام التالية **محدَّث ليعكس الحالة النهائية بعد هذا
+التصحيح.**
 
 ## ١. ما أُنجز، مرتّباً حسب الأسابيع
 
@@ -42,45 +50,54 @@ offline-first مع Focus Widget) من نهاية الأسبوع ٣ حتى نها
 - `RolloverScheduler` يجدول `PeriodicWorkRequest` كل ٢٤ ساعة بدءاً من أقرب
   منتصف ليل تالٍ
 
-### أسبوع ٥ — Glance Focus Widget
+### أسبوع ٥ — Glance (بناء الودجت، عرض فقط حسب الـ Blueprint الحقيقي)
 - فُعّلت تبعيات `glance-appwidget` و `glance-material3` (كانتا معلّقتين في
   Gradle بانتظار هذا الأسبوع بالضبط)
-- `FocusWidget`: يعرض المهمة التالية غير المنجزة لليوم + عدد المهام المتبقية
-  + زر "إنجاز" سريع (`CompleteNextTaskAction`)؛ الضغط على الودجت نفسه يفتح
-  `MainActivity`. الألوان من `GlanceTheme.colors` (مكافئ Glance لملفات
-  الـ Theme) لا قيم hardcoded
-- `FocusWidgetReceiver` + `res/xml/focus_widget_info.xml`، مسجَّلان في
+- `TodayWidget` (بعد التصحيح — كان اسمه `FocusWidget` قبل استلام الـ
+  Blueprint): "وضع التركيز" — يعرض أهم مهمة الآن بخط كبير + عدّاد "+N more"
+  للباقي، بدل جملة كاملة. الضغط على الودجت يفتح `MainActivity`. الألوان من
+  `GlanceTheme.colors` (glance-material3) فقط، لا قيم hardcoded
+- `TodayWidgetReceiver` + `res/xml/today_widget_info.xml`، مسجَّلان في
   Manifest
 - `TaskListViewModel` أصبح يأخذ `onDataChanged: suspend () -> Unit` يُستدعى
-  بعد كل تعديل (إضافة/تحديث/حذف/إنجاز/تراجع)، مربوطاً في `MainActivity`
-  باستدعاء `FocusWidget().updateAll(...)` — هذا يبقي الـ ViewModel خالياً من
-  أي اعتماد مباشر على Android Context (قابل للاختبار)
+  بعد كل تعديل، مربوطاً في `MainActivity` باستدعاء `TodayWidget().updateAll(...)`
+  — يبقي الـ ViewModel خالياً من أي اعتماد مباشر على Android Context
 - **إصلاح ضروري اكتُشف أثناء هذا الأسبوع**: `onComplete`/`onUndo` في
   الـ ViewModel كانا لا يضبطان `completedAt` إطلاقاً، ما يعني أن
   `archiveOldDone` (المُستخدم في أسبوع ٤) لن يحذف أي شيء أبداً. نُقل المنطق
   الصحيح إلى `TaskRepository.complete()/uncomplete()` ليُستخدم من الـ ViewModel
   والودجت معاً بدون تكرار
 
-### أسبوع ٦ — اختبارات
-- `TaskListViewModelTest` (JVM بحت): يغطي إضافة مهمة، تجاهل عنوان فارغ،
-  إنجاز+تراجع، والتبديل بين البكتات — باستخدام `FakeTaskDao` (تطبيق وهمي في
-  الذاكرة لواجهة `TaskDao` الموجودة أصلاً) و `kotlinx-coroutines-test`
-  (`UnconfinedTestDispatcher` + `backgroundScope`)، بدون أي مكتبة اختبار
-  إضافية مثل Turbine
-- `TaskDaoTest` (instrumented، Room in-memory): يغطي بالتحديد
-  `promoteTomorrowToToday` و `archiveOldDone` — نفس الاستعلامات التي يعتمد
-  عليها Worker أسبوع ٤
+### أسبوع ٦ — تفاعل الودجت + Material You (الحقيقي، حسب الـ Blueprint)
+- `WidgetActions.kt`: `CompleteFocusTaskAction` (`actionRunCallback`) ينجز
+  المهمة المعروضة مباشرة من الودجت
+- زر "إضافة" جديد على الودجت (في الحالتين: يوجد مهمة، أو القائمة فاضية) يفتح
+  `MainActivity` مع `EXTRA_OPEN_ADD_DIALOG=true`؛ `MainActivity`/`TaskListScreen`
+  يقرآن هذا الـ extra ليُفتح حوار الإضافة مباشرة — هذا كان الجزء الناقص من
+  "actionRunCallback (شطب/إضافة من الـ widget)" بالـ Blueprint
+- مزامنة widget↔app: مضمونة أصلاً عبر `onDataChanged` (أسبوع ٥) وعبر
+  `DailyRolloverWorker` الذي يستدعي `TodayWidget().updateAll(...)` بعد كل
+  ترحيل يومي
+- Material You: `GlanceTheme.colors` من `glance-material3` توفّره تلقائياً
+  (ألوان ديناميكية على أندرويد 12+، وثيم ثابت كـ fallback دونه) — لا كود
+  إضافي كان مطلوباً، فقط تم التحقق والتوثيق
 
-### أسبوع ٧ — تلميع نهائي
-- `SavedStateHandle` في `TaskListViewModel` لحفظ التبويب المختار (كـ String
-  اسم الـ enum) عبر process death، عبر `AbstractSavedStateViewModelFactory`
-  جديد
-- `editingTaskId` (بدل تخزين كائن `Task` كامل) و `title` في حوار
-  الإضافة/التعديل أصبحا `rememberSaveable` — يبقيان صحيحين بعد دوران الشاشة
-  وprocess death
+### أسبوع ٧ — UML + README احترافي (الحقيقي، حسب الـ Blueprint)
+- `README.md` جديد: Product Brief كامل (Value Proposition، Target Customer،
+  Opportunity، Feasibility)، مخطط معمارية، خريطة الأنماط، مخطط Class UML
+  ومخطط Sequence UML لسيناريو "إنجاز مهمة مع Undo" (Mermaid)، بنية المشروع،
+  أوامر البناء/الاختبار، وخارطة v1.1/v2
+- **Screenshots/GIF لم تُلتقط**: تحتاج تشغيل فعلي على جهاز/محاكي غير متاح في
+  هذه البيئة السحابية — مذكورة صراحة كمطلوب منك بعد فتح المشروع
+
+### عمل جودة إضافي (🟡 لم يكن جزءاً رسمياً من أي أسبوع بالـ Blueprint، أُنجز كذلك)
+- `TaskListViewModelTest` (JVM بحت) + `FakeTaskDao` + `TaskDaoTest`
+  (instrumented، Room in-memory) — يغطيان منطق الـ ViewModel والترحيل اليومي
+- `SavedStateHandle` لحفظ التبويب المختار عبر process death،
+  و`rememberSaveable` لـ `editingTaskId` ونص حوار التعديل عبر دوران الشاشة
 - مراجعة يدوية شاملة: توازن الأقواس، تطابق كل مفاتيح `R.string.*` بين الكود
-  و`values`/`values-ar`، تطابق كل `package` مع مسار الملف، عدم وجود استيراد
-  خاطئ لـ `R` (المشروع فيه تعارض أسماء حزم موجود مسبقاً، انظر §٣)
+  و`values`/`values-ar`، تطابق كل `package` مع مسار الملف (تم تكرار هذا
+  التحقق بعد إعادة تسمية الودجت أيضاً)
 
 ## ٢. القرارات المعمارية والتفصيلية (التفاصيل الكاملة في `DECISIONS.md`)
 
@@ -102,14 +119,14 @@ offline-first مع Focus Widget) من نهاية الأسبوع ٣ حتى نها
 
 ## ٣. مشاكل واجهتها وكيف حُلّت
 
-- **تعارض أسماء الحزم موجود مسبقاً في المشروع**: `namespace`/`applicationId`
-  في Gradle هو `com.nedal.today`، لكن كل كود Kotlin موجود تحت حزمة
-  `com.n.alian.today`. هذا يعني أن صنف `R` المُولَّد فعلياً هو
-  `com.nedal.today.R` وليس `com.n.alian.today.R`. تم التعامل مع هذا بحذر:
-  كل مكان يستورد موارد (`BucketLabel.kt`, `TaskListScreen.kt`,
-  `FocusWidget.kt`) يستورد `com.nedal.today.R` بشكل صريح وصحيح. لم أُعِد
-  تسمية أي حزمة لأن ذلك تعديل كبير غير مطلوب وخارج نطاق المهمة، ويحمل خطر
-  كسر أشياء أخرى.
+- **تعارض أسماء الحزم**: `namespace`/`applicationId` في Gradle هو
+  `com.nedal.today`، لكن كل كود Kotlin موجود تحت حزمة `com.n.alian.today`.
+  ظننته سهواً في البداية، لكن **الـ Blueprint الحقيقي يوثّق هذا كتغيير مقصود**
+  ("الحزمة الحقيقية: com.n.alian.today ... applicationId بالـ Gradle لسه
+  com.nedal.today — بيشتغل عادي")، فلا داعي لأي "إصلاح". يبقى فقط التعامل
+  التقني الصحيح: صنف `R` المُولَّد فعلياً هو `com.nedal.today.R`، وكل مكان
+  يستورد موارد (`BucketLabel.kt`, `TaskListScreen.kt`, `TodayWidget.kt`)
+  يستورده صراحة من هناك.
 - **`completedAt` لم يكن يُضبط أبداً** (موصوف أعلاه في أسبوع ٥) — اكتُشف أثناء
   ربط زر الإنجاز في الودجت بنفس منطق ViewModel، وأثّر مباشرة على صحة أرشفة
   أسبوع ٤، فتم إصلاحه بأقل تدخل ممكن (commit منفصل موسوم `fix:`).
@@ -135,10 +152,11 @@ offline-first مع Focus Widget) من نهاية الأسبوع ٣ حتى نها
    - دوّر الشاشة أثناء فتح حوار تعديل مع نص مكتوب غير محفوظ — يجب أن يبقى
    - من إعدادات المطوّر: "Don't keep activities" ثم ارجع للتطبيق — يجب أن
      يبقى التبويب المختار كما هو (اختبار process death)
-3. **الودجت (Focus Widget)**: من الشاشة الرئيسية للجهاز، اضغط مطولاً → ودجات
-   → "Today" → أضف الودجت "تركيز/Focus". تحقق أنه يعرض المهمة التالية وعدد
-   المهام المتبقية، واضغط "إنجاز" وتأكد أن الودجت يتحدّث فوراً، وأن التطبيق
-   نفسه (إن كان مفتوحاً) يعكس نفس التغيير.
+3. **الودجت (TodayWidget)**: من الشاشة الرئيسية للجهاز، اضغط مطولاً → ودجات
+   → "Today" → أضف الودجت. تحقق أنه يعرض أهم مهمة + عدّاد "+N more" إن وُجد،
+   واضغط "إنجاز" وتأكد أن الودجت يتحدّث فوراً وأن التطبيق (إن كان مفتوحاً)
+   يعكس نفس التغيير. ثم اضغط زر "+ إضافة مهمة" وتأكد أن التطبيق يُفتح مباشرة
+   على حوار إضافة مهمة جديدة.
 4. **الترحيل اليومي**: هذا يصعب اختباره فورياً لأنه مجدول لمنتصف الليل
    التالي. يمكنك التحقق منطقياً عبر `adb shell am broadcast` لمحاكاة
    WorkManager، أو ببساطة عبر `TaskDaoTest` (اختبار instrumented) الذي
