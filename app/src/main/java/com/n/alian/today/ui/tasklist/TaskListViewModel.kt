@@ -1,8 +1,10 @@
 package com.n.alian.today.ui.tasklist
 
+import androidx.lifecycle.AbstractSavedStateViewModelFactory
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.savedstate.SavedStateRegistryOwner
 import com.n.alian.today.data.local.Bucket
 import com.n.alian.today.data.local.Task
 import com.n.alian.today.data.repository.TaskRepository
@@ -13,14 +15,23 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalCoroutinesApi::class)
 class TaskListViewModel(
     private val repository: TaskRepository,
+    private val savedStateHandle: SavedStateHandle,
     // يحدّث Focus Widget بعد أي تعديل؛ suspend lambda بدل حقن Context مباشرة
     // في الـ ViewModel حتى يبقى قابلاً للاختبار بمعزل عن Android framework.
     private val onDataChanged: suspend () -> Unit = {}
 ) : ViewModel() {
 
-    private val selectedBucket = MutableStateFlow(Bucket.TODAY)
-    
-    val uiState: StateFlow<TaskListUiState> = selectedBucket
+    // نخزن اسم الـ bucket (String) بدل الـ enum مباشرة لضمان التوافق مع
+    // تخزين SavedStateHandle عبر Bundle، ليبقى التبويب المختار كما هو
+    // بعد process death وليس فقط دوران الشاشة.
+    private val selectedBucketName: StateFlow<String> =
+        savedStateHandle.getStateFlow(KEY_SELECTED_BUCKET, Bucket.TODAY.name)
+
+    private val selectedBucket: Bucket
+        get() = Bucket.valueOf(selectedBucketName.value)
+
+    val uiState: StateFlow<TaskListUiState> = selectedBucketName
+        .map { Bucket.valueOf(it) }
         .flatMapLatest { bucket ->
             repository.activeTasks(bucket).map { tasks ->
                 TaskListUiState(
@@ -42,13 +53,13 @@ class TaskListViewModel(
     private var lastCompletedTask: Task? = null
 
     fun onBucketSelected(bucket: Bucket) {
-        selectedBucket.value = bucket
+        savedStateHandle[KEY_SELECTED_BUCKET] = bucket.name
     }
 
     fun onAddTask(title: String) {
         if (title.isBlank()) return
         viewModelScope.launch {
-            repository.add(Task(title = title.trim(), bucket = selectedBucket.value))
+            repository.add(Task(title = title.trim(), bucket = selectedBucket))
             onDataChanged()
         }
     }
@@ -84,15 +95,24 @@ class TaskListViewModel(
             }
         }
     }
+
+    private companion object {
+        const val KEY_SELECTED_BUCKET = "selected_bucket"
+    }
 }
 
 class TaskListViewModelFactory(
     private val repository: TaskRepository,
+    owner: SavedStateRegistryOwner,
     private val onDataChanged: suspend () -> Unit = {}
-) : ViewModelProvider.Factory {
+) : AbstractSavedStateViewModelFactory(owner, null) {
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return TaskListViewModel(repository, onDataChanged) as T
+    override fun <T : ViewModel> create(
+        key: String,
+        modelClass: Class<T>,
+        handle: SavedStateHandle
+    ): T {
+        return TaskListViewModel(repository, handle, onDataChanged) as T
     }
 }

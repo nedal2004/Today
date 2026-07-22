@@ -1,5 +1,6 @@
 package com.n.alian.today.ui.tasklist
 
+import androidx.lifecycle.SavedStateHandle
 import com.n.alian.today.data.local.Bucket
 import com.n.alian.today.data.repository.TaskRepository
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +32,7 @@ class TaskListViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() = TaskListViewModel(TaskRepository(FakeTaskDao()))
+    private fun viewModel() = TaskListViewModel(TaskRepository(FakeTaskDao()), SavedStateHandle())
 
     @Test
     fun addingTask_appendsToSelectedBucket() = runTest(testDispatcher) {

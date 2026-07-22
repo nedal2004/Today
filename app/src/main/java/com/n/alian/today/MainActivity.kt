@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
                 val viewModel: TaskListViewModel = viewModel(
                     factory = TaskListViewModelFactory(
                         repository = repository,
+                        owner = this,
                         onDataChanged = { FocusWidget().updateAll(applicationContext) }
                     )
                 )
