@@ -154,7 +154,8 @@ private fun TaskDialog(
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)? = null
 ) {
-    var title by remember(initialTask) {
+    // rememberSaveable حتى لا يُفقد النص المكتوب وغير المحفوظ بعد دوران الشاشة.
+    var title by rememberSaveable(initialTask) {
         mutableStateOf(initialTask?.title ?: "")
     }
 
