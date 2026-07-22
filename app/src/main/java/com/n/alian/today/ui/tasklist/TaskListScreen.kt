@@ -21,11 +21,15 @@ import com.nedal.today.R
 import kotlinx.coroutines.launch
 
 @Composable
-fun TaskListScreen(viewModel: TaskListViewModel) {
+fun TaskListScreen(
+    viewModel: TaskListViewModel,
+    // true لما يُفتح التطبيق عبر زر "+" على الودجت — يفتح حوار الإضافة مباشرة.
+    openAddDialogOnLaunch: Boolean = false
+) {
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var showAddDialog by rememberSaveable { mutableStateOf(false) }
+    var showAddDialog by rememberSaveable { mutableStateOf(openAddDialogOnLaunch) }
     // نخزن id المهمة قيد التعديل فقط (وليس الكائن كاملاً) لأن Task غير Parcelable،
     // وهذا يضمن بقاء الحوار مفتوحاً على نفس المهمة بعد دوران الشاشة أو process death.
     var editingTaskId by rememberSaveable { mutableStateOf<Int?>(null) }

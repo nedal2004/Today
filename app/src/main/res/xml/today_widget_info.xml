@@ -8,4 +8,4 @@
     android:previewImage="@mipmap/ic_launcher_foreground"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:description="@string/widget_title" />
+    android:description="@string/app_name" />

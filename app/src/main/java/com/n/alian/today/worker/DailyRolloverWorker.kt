@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.n.alian.today.data.repository.TaskRepository
-import com.n.alian.today.widget.FocusWidget
+import com.n.alian.today.widget.TodayWidget
 import java.util.Calendar
 
 /**
@@ -20,8 +20,8 @@ class DailyRolloverWorker(
 
     override suspend fun doWork(): Result = try {
         repository.runDailyRollover(startOfToday())
-        // الترحيل يغيّر ما يظهر في Focus Widget (بكت TODAY)، لذا يُحدَّث معه.
-        FocusWidget().updateAll(applicationContext)
+        // الترحيل يغيّر ما يظهر في الودجت (بكت TODAY)، لذا يُحدَّث معه.
+        TodayWidget().updateAll(applicationContext)
         Result.success()
     } catch (e: Exception) {
         Result.retry()

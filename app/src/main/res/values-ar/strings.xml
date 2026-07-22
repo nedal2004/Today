@@ -18,9 +18,9 @@
     <string name="bucket_tomorrow">غداً</string>
     <string name="bucket_later">لاحقاً</string>
 
-    <!-- Focus Widget -->
-    <string name="widget_title">تركيز</string>
-    <string name="widget_no_tasks">لا مهام لليوم</string>
-    <string name="widget_tasks_remaining">%1$d مهام متبقية اليوم</string>
+    <!-- Today Widget (وضع التركيز: يعرض أهم مهمة فقط) -->
+    <string name="widget_no_tasks">لا مهام لليوم 🎉</string>
+    <string name="widget_more_tasks">+%1$d أخرى</string>
     <string name="widget_mark_done">إنجاز</string>
+    <string name="cd_widget_add_task">إضافة مهمة</string>
 </resources>

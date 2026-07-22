@@ -18,9 +18,9 @@
     <string name="bucket_tomorrow">Tomorrow</string>
     <string name="bucket_later">Later</string>
 
-    <!-- Focus widget -->
-    <string name="widget_title">Focus</string>
-    <string name="widget_no_tasks">No tasks for today</string>
-    <string name="widget_tasks_remaining">%1$d tasks remaining today</string>
+    <!-- Today Widget (Focus mode: shows the single most important task) -->
+    <string name="widget_no_tasks">No tasks for today 🎉</string>
+    <string name="widget_more_tasks">+%1$d more</string>
     <string name="widget_mark_done">Done</string>
+    <string name="cd_widget_add_task">Add task</string>
 </resources>

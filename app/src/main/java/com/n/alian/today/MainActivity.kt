@@ -9,12 +9,16 @@ import com.n.alian.today.ui.theme.TodayTheme
 import com.n.alian.today.ui.tasklist.TaskListViewModel
 import com.n.alian.today.ui.tasklist.TaskListViewModelFactory
 import com.n.alian.today.ui.tasklist.TaskListScreen
-import com.n.alian.today.widget.FocusWidget
+import com.n.alian.today.widget.TodayWidget
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // زر "+" على الودجت يفتح التطبيق مباشرة على حوار إضافة مهمة.
+        val openAddDialogOnLaunch = intent?.getBooleanExtra(EXTRA_OPEN_ADD_DIALOG, false) ?: false
+
         setContent {
             TodayTheme {
                 val repository = (application as TodayApp).repository
@@ -22,13 +26,17 @@ class MainActivity : ComponentActivity() {
                     factory = TaskListViewModelFactory(
                         repository = repository,
                         owner = this,
-                        onDataChanged = { FocusWidget().updateAll(applicationContext) }
+                        onDataChanged = { TodayWidget().updateAll(applicationContext) }
                     )
                 )
 
                 // استدعاء الشاشة هنا هو ما يحل مشكلة الشاشة السوداء
-                TaskListScreen(viewModel = viewModel)
+                TaskListScreen(viewModel = viewModel, openAddDialogOnLaunch = openAddDialogOnLaunch)
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_OPEN_ADD_DIALOG = "extra_open_add_dialog"
     }
 }
