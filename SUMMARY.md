@@ -1,0 +1,163 @@
+# SUMMARY — إكمال مشروع "Today"
+
+هذا الملخص يوثّق ما أُنجز في هذه الجلسة لإكمال مشروع "Today" (تطبيق مهام
+offline-first مع Focus Widget) من نهاية الأسبوع ٣ حتى نهاية الأسبوع ٧،
+والقرارات المتخذة، والمشاكل التي واجهتُها، وخطوات التحقق المطلوبة منك.
+
+## ⚠️ ملاحظة أولى مهمة: لا يوجد ملف Blueprint في المستودع
+
+قبل كتابة أي سطر، بحثتُ في كل الفروع (`Override` و
+`claude/today-project-completion-hczgga`) وكامل تاريخ الـ commits — **لا يوجد
+أي ملف Blueprint أو README أو خطة مكتوبة في هذا المستودع على الإطلاق**، فقط
+كود المشروع. التفاصيل الكاملة لكيفية إعادة بناء خطة الأسابيع ٤-٧ من أدلة
+موجودة فعلاً في الكود (تعليقات في `gradle/libs.versions.toml` تربط كل تقنية
+بأسبوع) موثقة في `DECISIONS.md`. لم أتوقف ولم أسألك، بل اتخذت القرار الأبسط
+المنسجم مع القيود المعمارية المذكورة في طلبك وسجّلته.
+
+## ١. ما أُنجز، مرتّباً حسب الأسابيع
+
+### أسبوع ١-٢ (كانا منجزَين مسبقاً، تم التحقق منهما فقط)
+- طبقة Room كاملة: `Task`, `Bucket`, `Converters`, `TaskDao`, `AppDatabase` (singleton)
+- `TaskRepository` كواجهة وحيدة فوق `TaskDao`
+- Design System: `Color.kt`, `Spacing.kt`, `Type.kt`, `Theme.kt`
+- `TaskListScreen` أساسي مع حوارات إضافة/تعديل/حذف
+
+### أسبوع ٣ (كان شبه منجز، أُكمل في هذه الجلسة)
+- **TopAppBar** يعرض اسم التطبيق
+- تعريب/i18n كامل: كل نص كان مكتوباً inline بالعربية في `TaskListScreen.kt`
+  انتقل إلى `values/strings.xml` (إنجليزي) و `values-ar/strings.xml` (عربي)،
+  بما فيها تسميات تبويبات TODAY/TOMORROW/LATER عبر `Bucket.label()`
+- مكوّن `EmptyState` مستقل أحادي المسؤولية بدل `Text` inline
+- إصلاح حالتين حدّيتين متعلقتين بدوران الشاشة/process death (تفصيل في §٤)
+
+### أسبوع ٤ — WorkManager: الترحيل اليومي
+- `DailyRolloverWorker` (CoroutineWorker) يستدعي
+  `TaskRepository.runDailyRollover` الموجود مسبقاً (ترقية TOMORROW→TODAY
+  وأرشفة المهام المنجزة القديمة)
+- `TodayWorkerFactory` يحقن `TaskRepository` يدوياً في الـ Worker بدون أي DI
+  framework
+- `TodayApp` أصبح `Configuration.Provider`، والتهيئة التلقائية الافتراضية
+  لـ WorkManager عُطّلت في `AndroidManifest.xml` (شرط لازم عند استخدام
+  Configuration.Provider مخصص)
+- `RolloverScheduler` يجدول `PeriodicWorkRequest` كل ٢٤ ساعة بدءاً من أقرب
+  منتصف ليل تالٍ
+
+### أسبوع ٥ — Glance Focus Widget
+- فُعّلت تبعيات `glance-appwidget` و `glance-material3` (كانتا معلّقتين في
+  Gradle بانتظار هذا الأسبوع بالضبط)
+- `FocusWidget`: يعرض المهمة التالية غير المنجزة لليوم + عدد المهام المتبقية
+  + زر "إنجاز" سريع (`CompleteNextTaskAction`)؛ الضغط على الودجت نفسه يفتح
+  `MainActivity`. الألوان من `GlanceTheme.colors` (مكافئ Glance لملفات
+  الـ Theme) لا قيم hardcoded
+- `FocusWidgetReceiver` + `res/xml/focus_widget_info.xml`، مسجَّلان في
+  Manifest
+- `TaskListViewModel` أصبح يأخذ `onDataChanged: suspend () -> Unit` يُستدعى
+  بعد كل تعديل (إضافة/تحديث/حذف/إنجاز/تراجع)، مربوطاً في `MainActivity`
+  باستدعاء `FocusWidget().updateAll(...)` — هذا يبقي الـ ViewModel خالياً من
+  أي اعتماد مباشر على Android Context (قابل للاختبار)
+- **إصلاح ضروري اكتُشف أثناء هذا الأسبوع**: `onComplete`/`onUndo` في
+  الـ ViewModel كانا لا يضبطان `completedAt` إطلاقاً، ما يعني أن
+  `archiveOldDone` (المُستخدم في أسبوع ٤) لن يحذف أي شيء أبداً. نُقل المنطق
+  الصحيح إلى `TaskRepository.complete()/uncomplete()` ليُستخدم من الـ ViewModel
+  والودجت معاً بدون تكرار
+
+### أسبوع ٦ — اختبارات
+- `TaskListViewModelTest` (JVM بحت): يغطي إضافة مهمة، تجاهل عنوان فارغ،
+  إنجاز+تراجع، والتبديل بين البكتات — باستخدام `FakeTaskDao` (تطبيق وهمي في
+  الذاكرة لواجهة `TaskDao` الموجودة أصلاً) و `kotlinx-coroutines-test`
+  (`UnconfinedTestDispatcher` + `backgroundScope`)، بدون أي مكتبة اختبار
+  إضافية مثل Turbine
+- `TaskDaoTest` (instrumented، Room in-memory): يغطي بالتحديد
+  `promoteTomorrowToToday` و `archiveOldDone` — نفس الاستعلامات التي يعتمد
+  عليها Worker أسبوع ٤
+
+### أسبوع ٧ — تلميع نهائي
+- `SavedStateHandle` في `TaskListViewModel` لحفظ التبويب المختار (كـ String
+  اسم الـ enum) عبر process death، عبر `AbstractSavedStateViewModelFactory`
+  جديد
+- `editingTaskId` (بدل تخزين كائن `Task` كامل) و `title` في حوار
+  الإضافة/التعديل أصبحا `rememberSaveable` — يبقيان صحيحين بعد دوران الشاشة
+  وprocess death
+- مراجعة يدوية شاملة: توازن الأقواس، تطابق كل مفاتيح `R.string.*` بين الكود
+  و`values`/`values-ar`، تطابق كل `package` مع مسار الملف، عدم وجود استيراد
+  خاطئ لـ `R` (المشروع فيه تعارض أسماء حزم موجود مسبقاً، انظر §٣)
+
+## ٢. القرارات المعمارية والتفصيلية (التفاصيل الكاملة في `DECISIONS.md`)
+
+1. **لا يوجد Blueprint** → أُعيد بناء خطة الأسابيع ٤-٧ من أدلة داخل الكود
+   نفسه + وصف المهمة + القيود المعمارية المذكورة، ووُثّق ذلك.
+2. **لغة strings.xml الافتراضية = إنجليزي**، `values-ar` = عربي (عرف Android
+   القياسي، يحقق "دعم العربية والإنجليزية" بشكل متماثل).
+3. **WorkManager**: `WorkerFactory` يدوي بدل أي DI framework، لأن القرار
+   المعماري يمنع صراحة أي over-engineering، والمشروع لا يحتاج Hilt لعامل
+   واحد فقط.
+4. **Focus Widget "مركّز" على مهمة واحدة فقط** (وليس قائمة كاملة قابلة
+   للتمرير) — تفادياً لتكرار منطق `TaskListScreen` بالكامل داخل Glance، وهذا
+   ينسجم أصلاً مع اسم "Focus".
+5. **لا اختبار مكتبة إضافية** (Turbine) — استُخدم `backgroundScope` +
+   `UnconfinedTestDispatcher` من `kotlinx-coroutines-test` نفسها.
+6. **`TaskRepository` بقيت class ملموسة (لا interface)** — إذ لا حاجة فعلية
+   لتبديل تطبيقها، والاختبار تم عبر تزويد `FakeTaskDao` (واجهة `TaskDao`
+   موجودة أصلاً بسبب Room)، فلا داعي لإضافة تجريد جديد.
+
+## ٣. مشاكل واجهتها وكيف حُلّت
+
+- **تعارض أسماء الحزم موجود مسبقاً في المشروع**: `namespace`/`applicationId`
+  في Gradle هو `com.nedal.today`، لكن كل كود Kotlin موجود تحت حزمة
+  `com.n.alian.today`. هذا يعني أن صنف `R` المُولَّد فعلياً هو
+  `com.nedal.today.R` وليس `com.n.alian.today.R`. تم التعامل مع هذا بحذر:
+  كل مكان يستورد موارد (`BucketLabel.kt`, `TaskListScreen.kt`,
+  `FocusWidget.kt`) يستورد `com.nedal.today.R` بشكل صريح وصحيح. لم أُعِد
+  تسمية أي حزمة لأن ذلك تعديل كبير غير مطلوب وخارج نطاق المهمة، ويحمل خطر
+  كسر أشياء أخرى.
+- **`completedAt` لم يكن يُضبط أبداً** (موصوف أعلاه في أسبوع ٥) — اكتُشف أثناء
+  ربط زر الإنجاز في الودجت بنفس منطق ViewModel، وأثّر مباشرة على صحة أرشفة
+  أسبوع ٤، فتم إصلاحه بأقل تدخل ممكن (commit منفصل موسوم `fix:`).
+- **لا يوجد Android SDK في هذه البيئة السحابية** (`ANDROID_HOME` فارغ،
+  `./gradlew` بلا صلاحية تنفيذ ولم يُحاول تفعيله لأن السبب الجذري هو غياب
+  الـ SDK وليس صلاحيات الملف). لذلك لم يكن ممكناً تشغيل build حقيقي أو
+  الاختبارات. بدلاً من التوقف، تمت مراجعة كل ملف Kotlin يدوياً بدقة: توازن
+  الأقواس، صحة الـ imports، تطابق تواقيع الدوال مع الاستدعاءات، وتطابق كل
+  مفتاح `R.string.*` مستخدَم مع مفتاح معرَّف فعلياً في كلا ملفي strings.xml
+  (تم تشغيل هذا التحقق آلياً عبر grep، والنتيجة تطابق تام).
+
+## ٤. خطوات التحقق المطلوبة منك (في Android Studio)
+
+1. **Sync + Build**: افتح المشروع، دع Gradle يعمل Sync (سيحمّل
+   `glance-appwidget`/`glance-material3` و`kotlinx-coroutines-test` لأول
+   مرة)، ثم Build → Make Project. هذا أول تحقق حقيقي من صحة الكود لأنني لم
+   أستطع تشغيله هنا.
+2. **الشاشة الرئيسية**: شغّل التطبيق، جرّب:
+   - إضافة مهمة، تعديلها، حذفها
+   - سحب مهمة لإنجازها (Swipe) ثم الضغط على "تراجع" في الـ Snackbar
+   - التبديل بين تبويبات اليوم/غداً/لاحقاً
+   - غيّر لغة الجهاز إلى العربية وتأكد من ظهور كل النصوص معرَّبة والاتجاه RTL
+   - دوّر الشاشة أثناء فتح حوار تعديل مع نص مكتوب غير محفوظ — يجب أن يبقى
+   - من إعدادات المطوّر: "Don't keep activities" ثم ارجع للتطبيق — يجب أن
+     يبقى التبويب المختار كما هو (اختبار process death)
+3. **الودجت (Focus Widget)**: من الشاشة الرئيسية للجهاز، اضغط مطولاً → ودجات
+   → "Today" → أضف الودجت "تركيز/Focus". تحقق أنه يعرض المهمة التالية وعدد
+   المهام المتبقية، واضغط "إنجاز" وتأكد أن الودجت يتحدّث فوراً، وأن التطبيق
+   نفسه (إن كان مفتوحاً) يعكس نفس التغيير.
+4. **الترحيل اليومي**: هذا يصعب اختباره فورياً لأنه مجدول لمنتصف الليل
+   التالي. يمكنك التحقق منطقياً عبر `adb shell am broadcast` لمحاكاة
+   WorkManager، أو ببساطة عبر `TaskDaoTest` (اختبار instrumented) الذي
+   يغطي بالضبط `promoteTomorrowToToday` و `archiveOldDone`.
+5. **الاختبارات**:
+   - `./gradlew testDebugUnitTest` → يجب أن ينجح `TaskListViewModelTest`
+     (JVM بحت، سريع)
+   - `./gradlew connectedDebugAndroidTest` (يحتاج جهاز/محاكي) → يجب أن ينجح
+     `TaskDaoTest`
+
+## ٥. اقتراحات لما بعد v1
+
+- شاشة "المهام المنجزة اليوم" تستخدم `TaskDao.observeDoneToday` الموجود
+  مسبقاً وغير مستخدَم حالياً في أي شاشة
+- سحب لليسار (`enableDismissFromEndToStart`) لحذف سريع، بدل الاكتفاء بالسحب
+  لليمين للإنجاز فقط
+- إشعار تذكير اختياري (WorkManager + Notification) لمهام TODAY لم تُنجز
+  بحلول ساعة معينة
+- ودجت بحجم أكبر (2×2 أو أكثر) يعرض 2-3 مهام بدل مهمة واحدة فقط، كخيار
+  للمستخدم وليس بديلاً عن الحجم الحالي
+- دعم ترتيب المهام يدوياً (drag to reorder) بالاستفادة من `sortOrder`
+  الموجود مسبقاً في `Task` لكنه غير مُستخدَم فعلياً بعد
