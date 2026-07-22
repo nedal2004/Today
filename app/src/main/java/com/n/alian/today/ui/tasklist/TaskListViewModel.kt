@@ -12,7 +12,10 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TaskListViewModel(
-    private val repository: TaskRepository
+    private val repository: TaskRepository,
+    // يحدّث Focus Widget بعد أي تعديل؛ suspend lambda بدل حقن Context مباشرة
+    // في الـ ViewModel حتى يبقى قابلاً للاختبار بمعزل عن Android framework.
+    private val onDataChanged: suspend () -> Unit = {}
 ) : ViewModel() {
 
     private val selectedBucket = MutableStateFlow(Bucket.TODAY)
@@ -46,40 +49,50 @@ class TaskListViewModel(
         if (title.isBlank()) return
         viewModelScope.launch {
             repository.add(Task(title = title.trim(), bucket = selectedBucket.value))
+            onDataChanged()
         }
     }
 
     fun onUpdateTask(task: Task) {
-        viewModelScope.launch { repository.update(task) }
+        viewModelScope.launch {
+            repository.update(task)
+            onDataChanged()
+        }
     }
 
     fun onDeleteTask(task: Task) {
-        viewModelScope.launch { repository.delete(task) }
+        viewModelScope.launch {
+            repository.delete(task)
+            onDataChanged()
+        }
     }
 
     fun onComplete(task: Task) {
         lastCompletedTask = task
         viewModelScope.launch {
-            repository.update(task.copy(isDone = true))
+            repository.complete(task)
+            onDataChanged()
         }
     }
 
     fun onUndo() {
         lastCompletedTask?.let { task ->
             viewModelScope.launch {
-                repository.update(task.copy(isDone = false))
+                repository.uncomplete(task)
                 lastCompletedTask = null
+                onDataChanged()
             }
         }
     }
 }
 
 class TaskListViewModelFactory(
-    private val repository: TaskRepository
+    private val repository: TaskRepository,
+    private val onDataChanged: suspend () -> Unit = {}
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return TaskListViewModel(repository) as T
+        return TaskListViewModel(repository, onDataChanged) as T
     }
 }
