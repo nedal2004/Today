@@ -12,10 +12,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.n.alian.today.data.local.Bucket
 import com.n.alian.today.data.local.Task
 import com.n.alian.today.ui.theme.Spacing
+import com.nedal.today.R
 import kotlinx.coroutines.launch
 
 @Composable
@@ -24,18 +26,24 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
-    var editingTask by remember { mutableStateOf<Task?>(null) }
+    // نخزن id المهمة قيد التعديل فقط (وليس الكائن كاملاً) لأن Task غير Parcelable،
+    // وهذا يضمن بقاء الحوار مفتوحاً على نفس المهمة بعد دوران الشاشة أو process death.
+    var editingTaskId by rememberSaveable { mutableStateOf<Int?>(null) }
+    val editingTask = uiState.tasks.find { it.id == editingTaskId }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    val taskCompletedMessage = stringResource(R.string.task_completed_message)
+    val undoLabel = stringResource(R.string.undo)
 
     val onTaskCompleted: (Task) -> Unit = { task ->
         viewModel.onComplete(task)
 
         scope.launch {
             val result = snackbarHostState.showSnackbar(
-                message = "تم إنجاز المهمة",
-                actionLabel = "تراجع",
+                message = taskCompletedMessage,
+                actionLabel = undoLabel,
                 duration = SnackbarDuration.Short
             )
             if (result == SnackbarResult.ActionPerformed) {
@@ -45,10 +53,13 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(title = { Text(stringResource(R.string.app_name)) })
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "إضافة مهمة")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_task))
             }
         }
     ) { innerPadding ->
@@ -59,7 +70,7 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
                     Tab(
                         selected = bucket == uiState.selectedBucket,
                         onClick = { viewModel.onBucketSelected(bucket) },
-                        text = { Text(bucket.name) }
+                        text = { Text(bucket.label()) }
                     )
                 }
             }
@@ -72,9 +83,7 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
                 }
 
                 uiState.tasks.isEmpty() -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("لا مهام هنا")
-                    }
+                    EmptyState()
                 }
 
                 else -> {
@@ -85,7 +94,7 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
                         items(uiState.tasks, key = { it.id }) { task ->
                             SwipeableTaskRow(
                                 task = task,
-                                onClick = { editingTask = task },
+                                onClick = { editingTaskId = task.id },
                                 onCheckedChange = { onTaskCompleted(task) },
                                 onSwiped = { onTaskCompleted(task) }
                             )
@@ -98,7 +107,7 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
 
     if (showAddDialog) {
         TaskDialog(
-            dialogTitle = "مهمة جديدة",
+            dialogTitle = stringResource(R.string.new_task_dialog_title),
             initialTask = null,
             onConfirm = { title ->
                 viewModel.onAddTask(title)
@@ -110,17 +119,29 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
 
     editingTask?.let { task ->
         TaskDialog(
-            dialogTitle = "تعديل المهمة",
+            dialogTitle = stringResource(R.string.edit_task_dialog_title),
             initialTask = task,
             onConfirm = { title ->
                 viewModel.onUpdateTask(task.copy(title = title))
-                editingTask = null
+                editingTaskId = null
             },
-            onDismiss = { editingTask = null },
+            onDismiss = { editingTaskId = null },
             onDelete = {
                 viewModel.onDeleteTask(task)
-                editingTask = null
+                editingTaskId = null
             }
+        )
+    }
+}
+
+/** Centered placeholder shown when the selected bucket has no active tasks. */
+@Composable
+private fun EmptyState() {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(
+            text = stringResource(R.string.empty_state_message),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -144,7 +165,7 @@ private fun TaskDialog(
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("عنوان المهمة") },
+                label = { Text(stringResource(R.string.task_title_label)) },
                 singleLine = true
             )
         },
@@ -153,7 +174,7 @@ private fun TaskDialog(
                 onClick = { onConfirm(title) },
                 enabled = title.isNotBlank()
             ) {
-                Text("حفظ")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
@@ -161,13 +182,13 @@ private fun TaskDialog(
                 if (onDelete != null) {
                     TextButton(onClick = onDelete) {
                         Text(
-                            text = "حذف",
+                            text = stringResource(R.string.delete),
                             color = MaterialTheme.colorScheme.error
                         )
                     }
                 }
                 TextButton(onClick = onDismiss) {
-                    Text("إلغاء")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         }
