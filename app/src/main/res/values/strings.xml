@@ -1,3 +1,26 @@
 <resources>
     <string name="app_name">Today</string>
+
+    <!-- Task list screen -->
+    <string name="cd_add_task">Add task</string>
+    <string name="task_completed_message">Task completed</string>
+    <string name="undo">Undo</string>
+    <string name="empty_state_message">No tasks here</string>
+    <string name="new_task_dialog_title">New task</string>
+    <string name="edit_task_dialog_title">Edit task</string>
+    <string name="task_title_label">Task title</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Buckets -->
+    <string name="bucket_today">Today</string>
+    <string name="bucket_tomorrow">Tomorrow</string>
+    <string name="bucket_later">Later</string>
+
+    <!-- Focus widget -->
+    <string name="widget_title">Focus</string>
+    <string name="widget_no_tasks">No tasks for today</string>
+    <string name="widget_tasks_remaining">%1$d tasks remaining today</string>
+    <string name="widget_mark_done">Done</string>
 </resources>
