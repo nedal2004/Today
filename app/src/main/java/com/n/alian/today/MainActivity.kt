@@ -9,6 +9,7 @@ import com.n.alian.today.ui.theme.TodayTheme
 import com.n.alian.today.ui.tasklist.TaskListViewModel
 import com.n.alian.today.ui.tasklist.TaskListViewModelFactory
 import com.n.alian.today.ui.tasklist.TaskListScreen
+import com.n.alian.today.widget.FocusWidget
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,9 +19,12 @@ class MainActivity : ComponentActivity() {
             TodayTheme {
                 val repository = (application as TodayApp).repository
                 val viewModel: TaskListViewModel = viewModel(
-                    factory = TaskListViewModelFactory(repository)
+                    factory = TaskListViewModelFactory(
+                        repository = repository,
+                        onDataChanged = { FocusWidget().updateAll(applicationContext) }
+                    )
                 )
-                
+
                 // استدعاء الشاشة هنا هو ما يحل مشكلة الشاشة السوداء
                 TaskListScreen(viewModel = viewModel)
             }

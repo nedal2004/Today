@@ -55,6 +55,10 @@ dependencies {
     // WorkManager (أسبوع ٤)
     implementation(libs.work.runtime.ktx)
 
+    // Glance Focus Widget (أسبوع ٥)
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
