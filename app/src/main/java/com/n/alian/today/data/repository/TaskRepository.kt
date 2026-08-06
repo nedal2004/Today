@@ -5,6 +5,15 @@ import com.n.alian.today.data.local.Bucket
 import com.n.alian.today.data.local.Task
 import com.n.alian.today.data.local.TaskDao
 import kotlinx.coroutines.flow.Flow
+import java.util.Calendar
+fun startOfDayMillis(): Long {
+    val calendar = Calendar.getInstance()          // ياخد التاريخ/الوقت الحالي
+    calendar.set(Calendar.HOUR_OF_DAY, 0)
+    calendar.set(Calendar.MINUTE, 0)
+    calendar.set(Calendar.SECOND, 0)
+    calendar.set(Calendar.MILLISECOND, 0)
+    return calendar.timeInMillis                   // millis
+}
 
 class TaskRepository(private val dao: TaskDao) {
     //observeActive
@@ -22,4 +31,5 @@ class TaskRepository(private val dao: TaskDao) {
         dao.archiveOldDone(startOfDay)
         dao.promoteTomorrowToToday()
     }
+
 }

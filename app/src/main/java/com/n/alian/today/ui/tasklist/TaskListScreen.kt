@@ -17,7 +17,9 @@ import com.n.alian.today.data.local.Bucket
 import com.n.alian.today.data.local.Task
 import com.n.alian.today.ui.theme.Spacing
 import kotlinx.coroutines.launch
+import com.n.alian.today.ui.component.EmptyState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskListScreen(viewModel: TaskListViewModel) {
 
@@ -45,13 +47,18 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Today") }
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "إضافة مهمة")
             }
         }
-    ) { innerPadding ->
+    ) {  innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
 
             TabRow(selectedTabIndex = uiState.selectedBucket.ordinal) {
@@ -59,7 +66,7 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
                     Tab(
                         selected = bucket == uiState.selectedBucket,
                         onClick = { viewModel.onBucketSelected(bucket) },
-                        text = { Text(bucket.name) }
+                        text = { Text(bucket.displayName()) }
                     )
                 }
             }
@@ -71,9 +78,21 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
                     }
                 }
 
+//
                 uiState.tasks.isEmpty() -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("لا مهام هنا")
+                    when (uiState.selectedBucket) {
+                        Bucket.TODAY -> EmptyState(
+                            title = "أنجزت كل شيء 🎉",
+                            subTitle = "لا مهام لليوم — استمتع بوقتك"
+                        )
+                        Bucket.TOMORROW -> EmptyState(
+                            title = "بكرة صفحة بيضاء",
+                            subTitle = "أضف مهمة لتخطط ليومك القادم"
+                        )
+                        Bucket.LATER -> EmptyState(
+                            title = "لا شيء مؤجل",
+                            subTitle = "المهام غير المستعجلة تعيش هنا"
+                        )
                     }
                 }
 
@@ -247,4 +266,9 @@ private fun TaskRow(
             )
         }
     }
+}
+private fun Bucket.displayName(): String = when (this) {
+    Bucket.TODAY -> "اليوم"
+    Bucket.TOMORROW -> "بكرة"
+    Bucket.LATER -> "لاحقاً"
 }

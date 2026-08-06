@@ -3,9 +3,9 @@ package com.n.alian.today.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // ── Light palette ──
-val PrimaryLight = Color(0xFF1B6B4F)      // أخضر هادئ — هوية "إنجاز"
+val PrimaryLight = Color(0xFF1B6B4F)
 val OnPrimaryLight = Color(0xFFFFFFFF)
-val BackgroundLight = Color(0xFFFAFAF7)   // أبيض دافئ، مش أبيض صارخ
+val BackgroundLight = Color(0xFFFAFAF7)
 val SurfaceLight = Color(0xFFFFFFFF)
 val OnSurfaceLight = Color(0xFF1C1C1A)
 

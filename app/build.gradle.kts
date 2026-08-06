@@ -5,15 +5,15 @@ plugins {
 }
 
 android {
-    namespace = "com.nedal.today"
-    compileSdk = 36
+    namespace = "com.n.alian.today"
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.nedal.today"
+        applicationId = "com.n.alian.today" 
         minSdk = 24
-        targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 35
+        versionCode = 11
+        versionName = "2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -47,12 +47,10 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
 
-    // Room (أسبوع ١) — لاحظ: ksp مش implementation للـ compiler!
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
-    // WorkManager (أسبوع ٤)
     implementation(libs.work.runtime.ktx)
 
     testImplementation(libs.junit)
@@ -62,4 +60,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+    implementation("androidx.glance:glance-material3:1.1.1")
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.n.alian.today.data.local.Bucket
 import com.n.alian.today.data.local.Task
 import com.n.alian.today.data.repository.TaskRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -16,7 +17,7 @@ class TaskListViewModel(
 ) : ViewModel() {
 
     private val selectedBucket = MutableStateFlow(Bucket.TODAY)
-    
+
     val uiState: StateFlow<TaskListUiState> = selectedBucket
         .flatMapLatest { bucket ->
             repository.activeTasks(bucket).map { tasks ->
@@ -27,16 +28,15 @@ class TaskListViewModel(
                 )
             }
         }
+        .flowOn(Dispatchers.IO)
         .catch { e ->
             emit(TaskListUiState(isLoading = false, error = e.message))
         }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = TaskListUiState()
+            initialValue = TaskListUiState(isLoading = true)
         )
-
-    private var lastCompletedTask: Task? = null
 
     fun onBucketSelected(bucket: Bucket) {
         selectedBucket.value = bucket
@@ -44,40 +44,41 @@ class TaskListViewModel(
 
     fun onAddTask(title: String) {
         if (title.isBlank()) return
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             repository.add(Task(title = title.trim(), bucket = selectedBucket.value))
         }
     }
 
     fun onUpdateTask(task: Task) {
-        viewModelScope.launch { repository.update(task) }
+        viewModelScope.launch(Dispatchers.IO) { repository.update(task) }
     }
 
     fun onDeleteTask(task: Task) {
-        viewModelScope.launch { repository.delete(task) }
+        viewModelScope.launch(Dispatchers.IO) { repository.delete(task) }
     }
+
+
+    private var lastCompletedTask: Task? = null
 
     fun onComplete(task: Task) {
         lastCompletedTask = task
-        viewModelScope.launch {
-            repository.update(task.copy(isDone = true))
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.update(task.copy(isDone = true, completedAt = System.currentTimeMillis()))
         }
     }
 
     fun onUndo() {
-        lastCompletedTask?.let { task ->
-            viewModelScope.launch {
-                repository.update(task.copy(isDone = false))
-                lastCompletedTask = null
-            }
+        val task = lastCompletedTask ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.update(task)
         }
+        lastCompletedTask = null
     }
 }
 
 class TaskListViewModelFactory(
     private val repository: TaskRepository
 ) : ViewModelProvider.Factory {
-
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return TaskListViewModel(repository) as T
