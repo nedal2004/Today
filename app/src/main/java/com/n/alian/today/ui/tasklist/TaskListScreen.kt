@@ -1,12 +1,10 @@
 package com.n.alian.today.ui.tasklist
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -15,11 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.n.alian.today.data.local.Bucket
 import com.n.alian.today.data.local.Task
+import com.n.alian.today.ui.component.EmptyState
+import com.n.alian.today.ui.component.TaskItem
+import com.n.alian.today.ui.component.TodayHeader
 import com.n.alian.today.ui.theme.Spacing
 import kotlinx.coroutines.launch
-import com.n.alian.today.ui.component.EmptyState
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskListScreen(viewModel: TaskListViewModel) {
 
@@ -47,19 +46,25 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Today") }
-            )
-        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "إضافة مهمة")
             }
         }
-    ) {  innerPadding ->
+    ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
+
+            TodayHeader(
+                doneToday = uiState.doneToday,
+                totalToday = uiState.totalToday,
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .padding(horizontal = Spacing.medium)
+                    .padding(top = Spacing.medium)
+            )
+
+            Spacer(modifier = Modifier.height(Spacing.medium))
 
             TabRow(selectedTabIndex = uiState.selectedBucket.ordinal) {
                 Bucket.entries.forEach { bucket ->
@@ -78,7 +83,6 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
                     }
                 }
 
-//
                 uiState.tasks.isEmpty() -> {
                     when (uiState.selectedBucket) {
                         Bucket.TODAY -> EmptyState(
@@ -102,11 +106,10 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
                         verticalArrangement = Arrangement.spacedBy(Spacing.small)
                     ) {
                         items(uiState.tasks, key = { it.id }) { task ->
-                            SwipeableTaskRow(
+                            TaskItem(
                                 task = task,
                                 onClick = { editingTask = task },
-                                onCheckedChange = { onTaskCompleted(task) },
-                                onSwiped = { onTaskCompleted(task) }
+                                onToggle = { onTaskCompleted(task) }
                             )
                         }
                     }
@@ -193,80 +196,6 @@ private fun TaskDialog(
     )
 }
 
-@Composable
-private fun SwipeableTaskRow(
-    task: Task,
-    onClick: () -> Unit,
-    onCheckedChange: () -> Unit,
-    onSwiped: () -> Unit
-) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.StartToEnd) {
-                onSwiped()
-                true
-            } else {
-                false
-            }
-        }
-    )
-
-    SwipeToDismissBox(
-        state = dismissState,
-        backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(horizontal = Spacing.medium),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Icon(
-                    Icons.Default.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        },
-        enableDismissFromEndToStart = false
-    ) {
-        TaskRow(
-            task = task,
-            onClick = onClick,
-            onCheckedChange = onCheckedChange
-        )
-    }
-}
-
-@Composable
-private fun TaskRow(
-    task: Task,
-    onClick: () -> Unit,
-    onCheckedChange: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Spacing.medium),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Checkbox(
-                checked = task.isDone,
-                onCheckedChange = { onCheckedChange() }
-            )
-            Spacer(modifier = Modifier.width(Spacing.small))
-            Text(
-                text = task.title,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f) // ضمان أن النص لا ينزل تحت التشك بوكس
-            )
-        }
-    }
-}
 private fun Bucket.displayName(): String = when (this) {
     Bucket.TODAY -> "اليوم"
     Bucket.TOMORROW -> "بكرة"

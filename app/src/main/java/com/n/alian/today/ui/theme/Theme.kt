@@ -9,17 +9,27 @@ import androidx.compose.runtime.Composable
 private val LightColors = lightColorScheme(
     primary = PrimaryLight,
     onPrimary = OnPrimaryLight,
+    primaryContainer = PrimaryContainerLight,
+    onPrimaryContainer = OnPrimaryContainerLight,
     background = BackgroundLight,
     surface = SurfaceLight,
-    onSurface = OnSurfaceLight
+    onSurface = OnSurfaceLight,
+    onSurfaceVariant = OnSurfaceVariantLight,
+    outlineVariant = OutlineVariantLight,
+    surfaceContainer = SurfaceContainerLight
 )
 
 private val DarkColors = darkColorScheme(
     primary = PrimaryDark,
     onPrimary = OnPrimaryDark,
+    primaryContainer = PrimaryContainerDark,
+    onPrimaryContainer = OnPrimaryContainerDark,
     background = BackgroundDark,
     surface = SurfaceDark,
-    onSurface = OnSurfaceDark
+    onSurface = OnSurfaceDark,
+    onSurfaceVariant = OnSurfaceVariantDark,
+    outlineVariant = OutlineVariantDark,
+    surfaceContainer = SurfaceContainerDark
 )
 
 @Composable
@@ -29,6 +39,7 @@ fun TodayTheme(
 ) {
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
+        typography = Typography,          // ← أهم سطر جديد
         content = content
     )
 }

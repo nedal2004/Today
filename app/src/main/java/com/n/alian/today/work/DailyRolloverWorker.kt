@@ -2,11 +2,13 @@ package com.n.alian.today.work
 
 import android.content.Context
 import android.util.Log
+import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.n.alian.today.TodayApp
 import com.n.alian.today.data.markRolloverRanToday
 import com.n.alian.today.data.repository.startOfDayMillis
+import com.n.alian.today.ui.widget.TodayWidget
 import kotlinx.coroutines.delay
 
 class DailyRolloverWorker(
@@ -21,23 +23,21 @@ class DailyRolloverWorker(
         Log.d("DailyRolloverWorker", "بدء عملية تدوير المهام اليومية...")
 
         return try {
-
             val app = applicationContext as TodayApp
             val repository = app.repository
 
             repository.runDailyRollover(startOfDayMillis())
-
-            // تسجيل أن الترحيل تم اليوم
             markRolloverRanToday(applicationContext)
+
+            // ✅ حدّث الـ Widget بعد الترحيل
+            TodayWidget().updateAll(applicationContext)
 
             Log.d("DailyRolloverWorker", "تمت العملية بنجاح")
 
             Result.success()
 
         } catch (e: Exception) {
-
             Log.e("DailyRolloverWorker", "فشلت العملية: ${e.message}")
-
             Result.retry()
         }
     }

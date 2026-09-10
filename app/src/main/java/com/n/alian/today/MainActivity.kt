@@ -13,9 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.n.alian.today.ui.theme.TodayTheme
+import com.n.alian.today.ui.tasklist.TaskListScreen
 import com.n.alian.today.ui.tasklist.TaskListViewModel
 import com.n.alian.today.ui.tasklist.TaskListViewModelFactory
-import com.n.alian.today.ui.tasklist.TaskListScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,14 +25,19 @@ class MainActivity : ComponentActivity() {
             TodayTheme {
                 val repository = (application as TodayApp).repository
                 val viewModel: TaskListViewModel = viewModel(
-                    factory = TaskListViewModelFactory(repository)
+                    factory = TaskListViewModelFactory(
+                        application = application,  // ← مرّرنا Application للـ Factory
+                        repository = repository
+                    )
                 )
-                
+
                 val uiState by viewModel.uiState.collectAsState()
 
-                // إذا كان التطبيق لا يزال يحمل البيانات، اظهر دائرة تحميل بدلاً من تجميد الشاشة
                 if (uiState.isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         CircularProgressIndicator()
                     }
                 } else {
