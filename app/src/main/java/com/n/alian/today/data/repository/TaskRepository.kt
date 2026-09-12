@@ -28,6 +28,8 @@ class TaskRepository(private val dao: TaskDao) {
 
     suspend fun getTaskById(taskId: Long): Task? = dao.getTaskById(taskId)
 
+    fun todayTasksByPriority(): Flow<List<Task>> = dao.observeTodayByPriority()
+
     suspend fun add(task: Task): Long = dao.insert(task)
 
     suspend fun update(task: Task) = dao.update(task)

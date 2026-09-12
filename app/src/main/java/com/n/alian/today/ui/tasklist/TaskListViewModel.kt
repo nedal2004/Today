@@ -61,10 +61,11 @@ class TaskListViewModel(
         selectedBucket.value = bucket
     }
 
-    fun onAddTask(title: String) {
-        if (title.isBlank()) return
+    fun onAddTask(task: Task) {
+        if (task.title.isBlank()) return
         viewModelScope.launch(Dispatchers.IO) {
-            repository.add(Task(title = title.trim(), bucket = selectedBucket.value))
+            // الـ bucket دائماً من التبويب الحالي — الحوار ما بيحدده
+            repository.add(task.copy(bucket = selectedBucket.value))
             refreshWidget()
         }
     }

@@ -20,6 +20,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.n.alian.today.data.local.Task
 import com.n.alian.today.ui.theme.Spacing
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.text.style.TextOverflow
+import com.n.alian.today.data.local.Category
+import com.n.alian.today.data.local.Priority
 
 /**
  * صف مهمة بتصميم "تركيز جريء":
@@ -75,7 +79,6 @@ private fun TaskRow(
     onClick: () -> Unit,
     onToggle: () -> Unit
 ) {
-    // ✅ ألوان متحركة: لون المهمة بين "أسود" و"رمادي باهت" حسب الحالة
     val textColor by animateColorAsState(
         targetValue = if (task.isDone)
             MaterialTheme.colorScheme.onSurfaceVariant
@@ -87,7 +90,7 @@ private fun TaskRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)          // ضغطة = فتح التعديل (كما كان)
+            .clickable(onClick = onClick)
             .padding(vertical = Spacing.small),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -95,13 +98,62 @@ private fun TaskRow(
 
         Spacer(modifier = Modifier.width(Spacing.small))
 
-        Text(
-            text = task.title,
-            style = MaterialTheme.typography.bodyLarge,
-            color = textColor,
-            textDecoration = if (task.isDone) TextDecoration.LineThrough else null,
-            modifier = Modifier.weight(1f)
-        )
+        // ✅ عمود بدل Text منفرد: العنوان فوق + الميتا تحته
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = task.title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = textColor,
+                textDecoration = if (task.isDone) TextDecoration.LineThrough else null
+            )
+
+// ✅ جديد — الوصف تحت العنوان (لو موجود)
+            task.notes?.let { notes ->
+                Spacer(modifier = Modifier.height(Spacing.extraSmall))
+                Text(
+                    text = notes,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    textDecoration = if (task.isDone) TextDecoration.LineThrough else null
+                )
+            }
+
+            // 🎨 الميتا: نقطة أولوية + تصنيف + تاريخ استحقاق
+            val hasMeta = task.dueDate != null ||
+                    task.category != Category.NONE ||
+                    task.priority != Priority.MEDIUM
+
+            if (hasMeta) {
+                Spacer(modifier = Modifier.height(Spacing.extraSmall))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val dotColor = when (task.priority) {
+                        Priority.HIGH -> MaterialTheme.colorScheme.error
+                        Priority.MEDIUM -> MaterialTheme.colorScheme.primary
+                        Priority.LOW -> MaterialTheme.colorScheme.outlineVariant
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(dotColor)
+                    )
+                    Spacer(modifier = Modifier.width(Spacing.extraSmall))
+                    Text(
+                        text = buildString {
+                            if (task.category != Category.NONE) append(task.category.label)
+                            task.dueDate?.let {
+                                if (isNotEmpty()) append(" · ")
+                                append(formatDueDate(it))
+                            }
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -126,10 +178,10 @@ private fun CircleCheck(checked: Boolean, onToggle: () -> Unit) {
 
     Box(
         modifier = Modifier
-            .size(44.dp)
+            .size(40.dp)
             .clip(CircleShape)
             .background(fillColor)
-            .border(width = 2.dp, color = borderColor, shape = CircleShape)
+            .border(width = 1.5.dp, color = borderColor, shape = CircleShape)
             .clickable(onClick = onToggle),
         contentAlignment = Alignment.Center
     ) {
@@ -139,7 +191,7 @@ private fun CircleCheck(checked: Boolean, onToggle: () -> Unit) {
                 contentDescription = "إنجاز",
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier
-                    .size(14.dp)
+                    .size(18.dp)
                     .graphicsLayer {
                         scaleX = checkScale
                         scaleY = checkScale

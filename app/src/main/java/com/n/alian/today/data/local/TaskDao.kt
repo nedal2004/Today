@@ -5,6 +5,18 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TaskDao {
+    @Query("""
+    SELECT * FROM tasks 
+    WHERE bucket = 'TODAY' AND isDone = 0 
+    ORDER BY 
+        CASE priority 
+            WHEN 'HIGH' THEN 1 
+            WHEN 'MEDIUM' THEN 2 
+            WHEN 'LOW' THEN 3 
+        END ASC,
+        sortOrder ASC
+""")
+    fun observeTodayByPriority(): Flow<List<Task>>
     @Query("SELECT * FROM tasks WHERE id = :taskId LIMIT 1")
     suspend fun getTaskById(taskId: Long): Task?
 

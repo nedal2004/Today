@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
@@ -69,20 +70,22 @@ fun TodayHeader(
 private fun ProgressRing(done: Int, total: Int, modifier: Modifier = Modifier) {
     val progress = if (total == 0) 0f else done.toFloat() / total
 
-    // ✅ أنيميشن ناعم: كل ما يتغير done، القوس بيمشي لحاله
     val animatedSweep by animateFloatAsState(
         targetValue = progress * 360f,
         label = "progressRing"
     )
+
+    // ✅ ألوان من الثيم بدل أرقام خام
+    val trackColor = MaterialTheme.colorScheme.outlineVariant
+    val progressColor = MaterialTheme.colorScheme.primary
 
     Box(
         modifier = modifier.size(48.dp),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // القاعدة (المسار الرمادي الكامل)
             drawArc(
-                color = androidx.compose.ui.graphics.Color(0xFFE7E7E0),
+                color = trackColor,
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -90,10 +93,9 @@ private fun ProgressRing(done: Int, total: Int, modifier: Modifier = Modifier) {
                 size = Size(size.width - 6.dp.toPx(), size.height - 6.dp.toPx()),
                 style = Stroke(width = 5.dp.toPx())
             )
-            // قوس الإنجاز (بيبدأ من ١٢ ساعة = -90 درجة)
             if (progress > 0f) {
                 drawArc(
-                    color = androidx.compose.ui.graphics.Color(0xFF1B6B4F),
+                    color = progressColor,
                     startAngle = -90f,
                     sweepAngle = animatedSweep,
                     useCenter = false,
