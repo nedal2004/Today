@@ -13,24 +13,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.n.alian.today.data.local.Bucket
 import com.n.alian.today.data.local.Task
 import com.n.alian.today.ui.component.EmptyState
 import com.n.alian.today.ui.component.SegmentedTabs
+import com.n.alian.today.ui.component.TaskDetailsDialog
+import com.n.alian.today.ui.component.TaskEditorDialog
 import com.n.alian.today.ui.component.TaskItem
 import com.n.alian.today.ui.component.TodayHeader
 import com.n.alian.today.ui.theme.Spacing
 import kotlinx.coroutines.launch
-import com.n.alian.today.ui.component.TaskEditorDialog
-
 
 @Composable
 fun TaskListScreen(viewModel: TaskListViewModel) {
@@ -39,6 +39,9 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
 
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<Task?>(null) }
+    var selectedTask by remember { mutableStateOf<Task?>(null) }
+    var showActionDialog by remember { mutableStateOf(false) }
+    var showDetailsDialog by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -131,7 +134,10 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
                             items(uiState.tasks, key = { it.id }) { task ->
                                 TaskItem(
                                     task = task,
-                                    onClick = { editingTask = task },
+                                    onClick = {
+                                        selectedTask = task
+                                        showActionDialog = true
+                                    },
                                     onToggle = { onTaskCompleted(task) }
                                 )
                             }
@@ -142,6 +148,7 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
         }
     }
 
+    // ── Dialog: إضافة مهمة ──
     if (showAddDialog) {
         TaskEditorDialog(
             dialogTitle = "مهمة جديدة",
@@ -154,6 +161,7 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
         )
     }
 
+    // ── Dialog: تعديل مهمة ──
     editingTask?.let { task ->
         TaskEditorDialog(
             dialogTitle = "تعديل المهمة",
@@ -169,53 +177,54 @@ fun TaskListScreen(viewModel: TaskListViewModel) {
             }
         )
     }
-}
 
-@Composable
-private fun TaskDialog(
-    dialogTitle: String,
-    initialTask: Task?,
-    onConfirm: (String) -> Unit,
-    onDismiss: () -> Unit,
-    onDelete: (() -> Unit)? = null
-) {
-    var title by remember(initialTask) {
-        mutableStateOf(initialTask?.title ?: "")
+    // ── Dialog: شو بدك تعمل؟ ──
+    if (showActionDialog && selectedTask != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showActionDialog = false
+                selectedTask = null
+            },
+            title = {
+                Text(
+                    text = selectedTask!!.title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
+            text = { Text("شو بدك تعمل؟") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showActionDialog = false
+                        showDetailsDialog = true
+                    }
+                ) {
+                    Text("عرض التفاصيل")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showActionDialog = false
+                        editingTask = selectedTask
+                        selectedTask = null
+                    }
+                ) {
+                    Text("تعديل")
+                }
+            }
+        )
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(dialogTitle) },
-        text = {
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("عنوان المهمة") },
-                singleLine = true
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirm(title) },
-                enabled = title.isNotBlank()
-            ) {
-                Text("حفظ")
+    // ── Dialog: تفاصيل المهمة ──
+    if (showDetailsDialog && selectedTask != null) {
+        TaskDetailsDialog(
+            task = selectedTask!!,
+            onDismiss = {
+                showDetailsDialog = false
+                selectedTask = null
             }
-        },
-        dismissButton = {
-            Row {
-                if (onDelete != null) {
-                    TextButton(onClick = onDelete) {
-                        Text(
-                            text = "حذف",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-                TextButton(onClick = onDismiss) {
-                    Text("إلغاء")
-                }
-            }
-        }
-    )
+        )
+    }
 }

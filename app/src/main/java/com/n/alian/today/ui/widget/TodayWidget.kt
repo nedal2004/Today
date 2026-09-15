@@ -88,7 +88,6 @@ private fun WidgetContent(
         ComponentName(context.packageName, MainActivity::class.java.name)
     )
 
-    // ✅ Box بيرسم الخلفية المدوّرة، وColumn جواه للمحتوى
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -138,6 +137,7 @@ private fun WidgetContent(
             }
         }
     }
+
 }
 
 // ─────────────────────────────────────────────────────────
