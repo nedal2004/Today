@@ -34,7 +34,7 @@ private fun todayDateLabel(): String {
     return "$dayName، $dayOfMonth $monthName"
 }
 
-/** 8 → ٨ — أرقام عربية للإحساس العربي الأول */
+/** 8 → ٨ — أرقام عربية  */
 //private fun Int.arabicDigits(): String =
  //   toString().joinToString("") { "٠١٢٣٤٥٦٧٨٩"[it.digitToInt()].toString() }
 
@@ -75,7 +75,7 @@ private fun ProgressRing(done: Int, total: Int, modifier: Modifier = Modifier) {
         label = "progressRing"
     )
 
-    // ✅ ألوان من الثيم بدل أرقام خام
+    //  ألوان من الثيم بدل أرقام خام
     val trackColor = MaterialTheme.colorScheme.outlineVariant
     val progressColor = MaterialTheme.colorScheme.primary
 

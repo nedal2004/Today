@@ -98,7 +98,7 @@ private fun TaskRow(
 
         Spacer(modifier = Modifier.width(Spacing.small))
 
-        // ✅ عمود بدل Text منفرد: العنوان فوق + الميتا تحته
+        //  عمود بدل Text منفرد: العنوان فوق + الميتا تحته
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = task.title,
@@ -107,7 +107,7 @@ private fun TaskRow(
                 textDecoration = if (task.isDone) TextDecoration.LineThrough else null
             )
 
-// ✅ جديد — الوصف تحت العنوان (لو موجود)
+//  الوصف تحت العنوان (لو موجود)
             task.notes?.let { notes ->
                 Spacer(modifier = Modifier.height(Spacing.extraSmall))
                 Text(
@@ -120,7 +120,7 @@ private fun TaskRow(
                 )
             }
 
-            // 🎨 الميتا: نقطة أولوية + تصنيف + تاريخ استحقاق
+            //  الميتا: نقطة أولوية + تصنيف + تاريخ استحقاق
             val hasMeta = task.dueDate != null ||
                     task.category != Category.NONE ||
                     task.priority != Priority.MEDIUM

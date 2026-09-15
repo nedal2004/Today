@@ -55,7 +55,7 @@ fun TaskDetailsDialog(
                     }
                 }
 
-                // ── الأولوية ──
+                //الاولولية
                 Column {
                     Text(
                         text = "الأولوية",
@@ -85,7 +85,7 @@ fun TaskDetailsDialog(
                     }
                 }
 
-                // ── تاريخ الاستحقاق ──
+                // تاريخ الاستحقاق
                 task.dueDate?.let { due ->
                     Column {
                         Text(
@@ -101,7 +101,7 @@ fun TaskDetailsDialog(
                     }
                 }
 
-                // ── الحالة الذكية ──
+// the status
                 val (statusText, statusColor) = when {
                     task.isDone -> "منجزة ✓" to MaterialTheme.colorScheme.primary
                     task.dueDate == null -> "نشطة" to MaterialTheme.colorScheme.onSurface
@@ -132,7 +132,7 @@ fun TaskDetailsDialog(
     )
 }
 
-/** نقطة أولوية ملونة (نسخة Compose) */
+// لون الاولوية
 @Composable
 private fun PriorityDot(priority: Priority) {
     val color = when (priority) {
@@ -148,25 +148,25 @@ private fun PriorityDot(priority: Priority) {
     )
 }
 
-/** تنسيق التاريخ كامل: "الاثنين، ١٥ سبتمبر ٢٠٢٥" */
+// تنسيق التاريخ
 private fun formatFullDate(millis: Long): String {
     val sdf = SimpleDateFormat("EEEE، d MMMM yyyy", Locale("ar"))
     return sdf.format(Date(millis))
 }
 
-/** هل التاريخ في الماضي (قبل اليوم)؟ */
+// هل التاريخ في الماضي؟
 private fun isOverdue(millis: Long): Boolean {
     return millis < startOfDay()
 }
 
-/** هل التاريخ اليوم؟ */
+// التاريخ اليوم؟
 private fun isToday(millis: Long): Boolean {
     val today = startOfDay()
     val tomorrow = today + 24 * 60 * 60 * 1000L
     return millis >= today && millis < tomorrow
 }
 
-/** بداية اليوم الحالي (00:00) */
+// بداية اليوم الحالي
 private fun startOfDay(): Long {
     val calendar = Calendar.getInstance()
     calendar.set(Calendar.HOUR_OF_DAY, 0)

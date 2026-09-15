@@ -13,7 +13,7 @@ val Cairo = FontFamily(
     Font(R.font.cairo_family)
 )
 
-// مدرسة تايبوغرافية "تركيز جريء": عناوين Bold كبيرة، نصوص Normal
+//  "تركيز جريء": عناوين Bold كبيرة، نصوص Normal
 // letterSpacing = 0 دائماً — الـ letterSpacing بيكسر اتصال الحروف العربية
 val Typography = Typography(
     headlineSmall = TextStyle(   // عنوان الشاشة "اليوم"

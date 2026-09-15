@@ -83,7 +83,7 @@ fun EmptyState(
     }
 }
 
-/** يشغّل الأنيميشن مرة وحدة بعد أول composition (frame واحد تأخير كافي). */
+// يشغّل الأنيميشن مرة وحدة
 @Composable
 private fun LaunchedEffectVisible(onReady: () -> Unit) {
     androidx.compose.runtime.LaunchedEffect(Unit) {

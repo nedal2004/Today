@@ -29,7 +29,7 @@ class TaskListViewModel(
 
     private val selectedBucket = MutableStateFlow(Bucket.TODAY)
 
-    // ✅ combine بدل map: ثلاثة Flows تتجمع بـ UiState واحد
+    //  combine بدل map: ثلاثة Flows تتجمع بـ UiState واحد
     // (مهام التبويب المختار + عدّاد مهام اليوم + عدّاد المنجز اليوم)
     val uiState: StateFlow<TaskListUiState> = selectedBucket
         .flatMapLatest { bucket ->

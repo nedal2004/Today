@@ -27,7 +27,7 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE isDone = 1 AND completedAt >= :startOfDay ORDER BY completedAt DESC")
     fun observeDoneToday(startOfDay: Long): Flow<List<Task>>
 
-    // ── عدّادات الهيدر (خفيفة — COUNT بدل SELECT *) ──
+    // ── عدادات الهيدر ──
     @Query("SELECT COUNT(*) FROM tasks WHERE bucket = 'TODAY' AND isDone = 0")
     fun observeActiveTodayCount(): Flow<Int>
 

@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-// ✅ Migration حقيقي: ALTER TABLE — بيانات المستخدم ما بتروح
+//  Migration حقيقي: ALTER TABLE — بيانات المستخدم ما بتروح
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE tasks ADD COLUMN dueDate INTEGER")
@@ -17,7 +17,7 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
-@Database(entities = [Task::class], version = 2, exportSchema = true)   // ← version = 2
+@Database(entities = [Task::class], version = 2, exportSchema = true)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -33,7 +33,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "today.db"
                 )
-                    .addMigrations(MIGRATION_1_2)          // ← التسجيل هون
+                    .addMigrations(MIGRATION_1_2)
                     .build().also { INSTANCE = it }
             }
     }

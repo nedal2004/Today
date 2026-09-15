@@ -39,7 +39,7 @@ fun TodayTheme(
 ) {
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
-        typography = Typography,          // ← أهم سطر جديد
+        typography = Typography,
         content = content
     )
 }

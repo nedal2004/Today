@@ -8,14 +8,14 @@ val OnPrimaryLight = Color(0xFFFFFFFF)
 val PrimaryContainerLight = Color(0xFFCDEBDB)
 val OnPrimaryContainerLight = Color(0xFF0B3D2C)
 
-val BackgroundLight = Color(0xFFF6F8F6)       // أبيض مائل للخضرة الخفيفة
+val BackgroundLight = Color(0xFFF6F8F6)
 val SurfaceLight = Color(0xFFFFFFFF)
 val OnSurfaceLight = Color(0xFF181B19)
 val OnSurfaceVariantLight = Color(0xFF5C615C)
 val OutlineVariantLight = Color(0xFFE2E6E1)
 val SurfaceContainerLight = Color(0xFFEDF1EC)
 
-// ── Dark palette · داكن مرفوع مش كئيب ──
+// ── Dark palette ─
 val PrimaryDark = Color(0xFF6ED7A5)
 val OnPrimaryDark = Color(0xFF003823)
 val PrimaryContainerDark = Color(0xFF1D4A36)
